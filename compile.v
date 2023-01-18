@@ -64,8 +64,9 @@ fn (j CompilationJob) compile() {
 }
 
 fn (j CompilationJob) encode() ?string {
-	bytes := os.read_bytes(j.get_ext_path('wasm')) or { return error('failed to read wasm') }
-	return base64.encode(bytes)
+	bytes0 := os.read_bytes(j.get_ext_path('wasm')) or { return error('failed to read wasm') }
+	bytes1 := os.read_bytes(j.get_ext_path('js')) or { return error('failed to read js') }
+	return base64.encode(bytes0) + " " + base64.encode(bytes1)
 }
 
 fn (j CompilationJob) cleanup() ? {
