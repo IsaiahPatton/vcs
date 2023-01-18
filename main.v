@@ -1,4 +1,3 @@
-
 module main
 
 import vweb
@@ -14,9 +13,9 @@ struct App {
 
 fn main() {
 	mut app := &App{}
-	
+
 	app.mount_static_folder_at(os.resource_abs_path('./public'), '/')
-	
+
 	vweb.run(app, port)
 }
 
@@ -24,10 +23,11 @@ pub fn (mut app App) init_once() {
 	app.handle_static('./public', true)
 }
 
-[post]
-['/wasm']
+['/wasm'; post]
 pub fn (mut app App) index() vweb.Result {
-	j := new_compilation_job(app.req.data) or { return app.text(err.msg) }
+	dat := app.req.data
+	dump(dat)
+	j := new_compilation_job(dat) or { return app.text(err.msg) }
 	j.compile()
 	wasm := j.encode() or { return app.text(err.msg) }
 	j.cleanup() or { return app.text(err.msg) }
