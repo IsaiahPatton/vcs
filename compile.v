@@ -33,10 +33,25 @@ fn (j CompilationJob) get_ext_path(ext string) string {
 	return os.join_path(j.path, '${j.id}.${ext}')
 }
 
+fn (j CompilationJob) get_ext_path1(ext string) string {
+	return os.join_path(j.path, '${j.id}_.${ext}')
+}
+
 fn (j CompilationJob) compile() {
-	v_res := os.exec('v -o ${j.get_ext_path('c')} ${j.get_ext_path('v')}') or { panic(err) }
+
+	out0 := j.get_ext_path('c')
+	out1 := j.get_ext_path1('c')
+	v_res := os.execute('v -d emscripten -d no_emoji -gc none -os wasm32-emscripten -o ${out1} ${j.get_ext_path('v')}')
 	println(v_res.str())
-	clang_res := os.exec('./wasi-sdk-12.0/bin/clang -w -O3 -D__linux__ \
+	
+	b := os.execute("cat ${out1} | sed 's/waitpid(p->pid, &cstatus, 0);/-1;/g' | sed 's/waitpid(p->pid, &cstatus, WNOHANG);/-1;/g' | sed 's/wait(0);/-1;/g' &> ${out0}")
+	dump(b.str())
+	
+	//c := os.execute("emcc -fPIC -Wimplicit-function-declaration -w  thirdparty/stb_image/stbi.c -I/usr/include/gc/   -Ithirdparty/stb_image -Ithirdparty/fontstash -Ithirdparty/sokol -Ithirdparty/sokol/util    -DSOKOL_GLES2 -DSOKOL_NO_ENTRY   -DNDEBUG -O3   -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ALLOW_MEMORY_GROWTH -s MODULARIZE -s ASSERTIONS=1 emscripten.c -o app.js --embed-file C:/v/examples/gg/myfont.ttf@/myfont.ttf")
+	c := os.execute("emcc -fPIC -Wimplicit-function-declaration -w  thirdparty/stb_image/stbi.c -I/usr/include/gc/   -Ithirdparty/stb_image -Ithirdparty/fontstash -Ithirdparty/sokol -Ithirdparty/sokol/util    -DSOKOL_GLES2 -DSOKOL_NO_ENTRY   -DNDEBUG -O3   -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ALLOW_MEMORY_GROWTH -s MODULARIZE -s ASSERTIONS=1 ${out0} -o ${j.get_ext_path('js')}")
+	dump(c.str())
+	
+	/*clang_res := os.exec('./wasi-sdk-12.0/bin/clang -w -O3 -D__linux__ \
 	-target wasm32-unknown-wasi \
 	--sysroot "./wasi-sdk-12.0/share/wasi-sysroot" \
 	-D_WASI_EMULATED_SIGNAL \
@@ -45,7 +60,7 @@ fn (j CompilationJob) compile() {
 	-Wl,--allow-undefined \
 	-o ${j.get_ext_path('wasm')} \
 	${j.get_ext_path('c')} placeholders.c') or { panic(err) }
-	println(clang_res.str())
+	println(clang_res.str())*/
 }
 
 fn (j CompilationJob) encode() ?string {

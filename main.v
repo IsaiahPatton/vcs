@@ -2,6 +2,7 @@
 module main
 
 import vweb
+import os
 
 const (
 	port = 80
@@ -12,7 +13,11 @@ struct App {
 }
 
 fn main() {
-	vweb.run<App>(port)
+	mut app := &App{}
+	
+	app.mount_static_folder_at(os.resource_abs_path('./public'), '/')
+	
+	vweb.run(app, port)
 }
 
 pub fn (mut app App) init_once() {

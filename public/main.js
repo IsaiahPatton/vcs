@@ -33,7 +33,8 @@ let main = async () => {
 	
 	await wasmTransformerInit("https://unpkg.com/@wasmer/wasm-transformer@0.11.2/lib/wasm-pack/web/wasm_transformer_bg.wasm")
 
-	let compiled = await (await fetch('http://206.189.5.243/wasm?code=')).text()
+	//let compiled = await (await fetch('http://206.189.5.243/wasm?code=')).text()
+	let compiled = await (await fetch('http://localhost/wasm?code=')).text()
 
 	let module = await WebAssembly.compile(await lowerI64Imports(_base64ToArrayBuffer(compiled)))
 	
