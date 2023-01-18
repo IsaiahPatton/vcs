@@ -54,6 +54,15 @@ fn (j CompilationJob) compile() {
 	dump(o0.len)
 	dump(o1.len)
 	
+	if o0.len <= 1 {
+		os.write_file(out0, b.output) or {  }
+	}
+	
+	o00 := os.read_lines(out0) or { ['err'] }
+	
+	dump(o00[0])
+	
+	
 	dump(b.exit_code)
 	// c := os.execute("emcc -fPIC -Wimplicit-function-declaration -w  thirdparty/stb_image/stbi.c -I/usr/include/gc/   -Ithirdparty/stb_image -Ithirdparty/fontstash -Ithirdparty/sokol -Ithirdparty/sokol/util    -DSOKOL_GLES2 -DSOKOL_NO_ENTRY   -DNDEBUG -O3   -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ALLOW_MEMORY_GROWTH -s MODULARIZE -s ASSERTIONS=1 emscripten.c -o app.js --embed-file C:/v/examples/gg/myfont.ttf@/myfont.ttf")
 	c := os.execute('emcc -fPIC -Wimplicit-function-declaration -w  v/thirdparty/stb_image/stbi.c -I/usr/include/gc/   -Iv/thirdparty/stb_image -Iv/thirdparty/fontstash -Iv/thirdparty/sokol -Iv/thirdparty/sokol/util    -DSOKOL_GLES2 -DSOKOL_NO_ENTRY   -DNDEBUG -O3   -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ALLOW_MEMORY_GROWTH -s MODULARIZE -s ASSERTIONS=1 ${out0} -o ${j.get_ext_path('js')}')
