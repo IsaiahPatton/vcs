@@ -3,6 +3,7 @@ module main
 import os
 import rand
 import encoding.base64
+import szip
 
 struct CompilationJob {
 	id        string
@@ -24,6 +25,17 @@ fn new_compilation_job(code string) ?CompilationJob {
 	}
 
 	os.mkdir(j.path) or { return error('failed to create temp dir') }
+	
+	
+	tag := 'ZIP-'
+	if code.starts_with(tag) {
+		zip_data := code.split(tag)[1]
+		decode := base64.decode(zip_data)
+		path := os.join_path(j.path, 'code.zip')
+		os.write_file_array(path, decode) or { panic(err) }
+		szip.extract_zip_to_dir(path, j.path) or {}
+	}
+	
 	os.write_file(j.get_ext_path('v'), j.code) or { return error('failed to write code to temp') }
 
 	lines := os.read_lines(j.get_ext_path('v')) or { ['err'] }
@@ -43,26 +55,24 @@ fn (j CompilationJob) get_ext_path1(ext string) string {
 fn (j CompilationJob) compile() {
 	out0 := j.get_ext_path('c')
 	out1 := j.get_ext_path1('c')
-	v_res := os.execute('v -d emscripten -d no_emoji -gc none -os wasm32-emscripten -o ${out1} ${j.get_ext_path('v')}')
+	//v_res := os.execute('v -d emscripten -d no_emoji -gc none -os wasm32-emscripten -o ${out1} ${j.get_ext_path('v')}')
+	v_res := os.execute('v -d emscripten -d no_emoji -gc none -os wasm32-emscripten -o ${out1} ${j.path}')
 	println(v_res.str())
 
 	b := os.execute("cat ${out1} | sed 's/waitpid(p->pid, &cstatus, 0);/-1;/g' | sed 's/waitpid(p->pid, &cstatus, WNOHANG);/-1;/g' | sed 's/wait(0);/-1;/g' &> ${out0}")
-	
+
 	o0 := os.read_lines(out0) or { ['err'] }
 	o1 := os.read_lines(out1) or { ['err'] }
-	
+
 	dump(o0.len)
 	dump(o1.len)
-	
 	if o0.len <= 1 {
-		os.write_file(out0, b.output) or {  }
+		os.write_file(out0, b.output) or {}
 	}
-	
+
 	o00 := os.read_lines(out0) or { ['err'] }
-	
+
 	dump(o00[0])
-	
-	
 	dump(b.exit_code)
 	// c := os.execute("emcc -fPIC -Wimplicit-function-declaration -w  thirdparty/stb_image/stbi.c -I/usr/include/gc/   -Ithirdparty/stb_image -Ithirdparty/fontstash -Ithirdparty/sokol -Ithirdparty/sokol/util    -DSOKOL_GLES2 -DSOKOL_NO_ENTRY   -DNDEBUG -O3   -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ALLOW_MEMORY_GROWTH -s MODULARIZE -s ASSERTIONS=1 emscripten.c -o app.js --embed-file C:/v/examples/gg/myfont.ttf@/myfont.ttf")
 	c := os.execute('emcc -fPIC -Wimplicit-function-declaration -w  v/thirdparty/stb_image/stbi.c -I/usr/include/gc/   -Iv/thirdparty/stb_image -Iv/thirdparty/fontstash -Iv/thirdparty/sokol -Iv/thirdparty/sokol/util    -DSOKOL_GLES2 -DSOKOL_NO_ENTRY   -DNDEBUG -O3   -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s ALLOW_MEMORY_GROWTH -s MODULARIZE -s ASSERTIONS=1 ${out0} -o ${j.get_ext_path('js')}')
