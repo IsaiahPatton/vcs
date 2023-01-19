@@ -34,9 +34,9 @@ fn new_compilation_job(code string) ?CompilationJob {
 		path := os.join_path(j.path, 'code.zip')
 		os.write_file_array(path, decode) or { panic(err) }
 		szip.extract_zip_to_dir(path, j.path) or {}
+	} else {
+		os.write_file(j.get_ext_path('v'), j.code) or { return error('failed to write code to temp') }
 	}
-	
-	os.write_file(j.get_ext_path('v'), j.code) or { return error('failed to write code to temp') }
 
 	lines := os.read_lines(j.get_ext_path('v')) or { ['err'] }
 
